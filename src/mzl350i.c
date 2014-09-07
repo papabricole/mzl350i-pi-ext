@@ -266,7 +266,7 @@ void write_dot(uint16_t dx, uint16_t dy, uint16_t color)
 void loadFrameBuffer_diff_960640()
 {
     int  xsize=960, ysize=640;
-    unsigned char *buffer;
+    unsigned char *framebuffer;
     FILE *infile=fopen("/dev/fb0","rb");
     int i,j;
     unsigned long offset=0;
@@ -279,7 +279,7 @@ void loadFrameBuffer_diff_960640()
     int diffsx, diffsy, diffex, diffey;
     int numdiff=0;
     
-    buffer = (unsigned char *) malloc(xsize * ysize * 2);
+    framebuffer = (unsigned char *) malloc(xsize * ysize * 2);
 
     ili9481_Setwindow(0,480-1,0,320-1);
     LCD_CS_CLR;
@@ -298,7 +298,7 @@ void loadFrameBuffer_diff_960640()
     
     while (1) {
         rewind(infile);
-        if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
+        if (fread (framebuffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
             printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
             printf ("config.txt setting error\n") ;
             return;
@@ -312,7 +312,7 @@ void loadFrameBuffer_diff_960640()
         for (i=0; i < ysize; i+=2) {
             for (j=0; j < xsize; j+=2) {
                 offset =  (i * xsize+ j)*2;
-                p=(buffer[offset+1] << 8) | buffer[offset];
+                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
                 r = (p & RGB565_MASK_RED) >> 11;
                 g = (p & RGB565_MASK_GREEN) >> 5;
                 b = (p & RGB565_MASK_BLUE);
@@ -321,7 +321,7 @@ void loadFrameBuffer_diff_960640()
                 b <<= 1;
                 
                 offset = ( (i+1) * xsize +j )*2;
-                p=(buffer[offset+1] << 8) | buffer[offset];
+                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
                 r1 = (p & RGB565_MASK_RED) >> 11;
                 g1 = (p & RGB565_MASK_GREEN) >> 5;
                 b1 = (p & RGB565_MASK_BLUE);
@@ -331,7 +331,7 @@ void loadFrameBuffer_diff_960640()
                 b += b1 <<1;
                 
                 offset = ( i*xsize + j+1)*2;
-                p=(buffer[offset+1] << 8) | buffer[offset];
+                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
                 r1 = (p & RGB565_MASK_RED) >> 11;
                 g1 = (p & RGB565_MASK_GREEN) >> 5;
                 b1 = (p & RGB565_MASK_BLUE);
@@ -341,7 +341,7 @@ void loadFrameBuffer_diff_960640()
                 b += b1 <<1;
                 
                 offset=((i+1)*xsize + j+1)*2;
-                p=(buffer[offset+1] << 8) | buffer[offset];
+                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
                 r1 = (p & RGB565_MASK_RED) >> 11;
                 g1 = (p & RGB565_MASK_GREEN) >> 5;
                 b1 = (p & RGB565_MASK_BLUE);
@@ -402,7 +402,7 @@ void loadFrameBuffer_diff_960640()
 void loadFrameBuffer_diff_480320()
 {
     int  xsize=480, ysize=320;
-    unsigned char *buffer;
+    unsigned char *framebuffer;
     FILE *infile=fopen("/dev/fb0","rb");
     int i,j;
     unsigned long offset=0;
@@ -413,7 +413,7 @@ void loadFrameBuffer_diff_480320()
     int diffsx, diffsy, diffex, diffey;
     int numdiff=0;
     
-    buffer = (unsigned char *) malloc(xsize * ysize * 2);
+    framebuffer = (unsigned char *) malloc(xsize * ysize * 2);
 
     ili9481_Setwindow(0,480-1,0,320-1);
     LCD_CS_CLR;
@@ -432,7 +432,7 @@ void loadFrameBuffer_diff_480320()
     
     while (1) {
         rewind(infile);
-        if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
+        if (fread (framebuffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
             printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
             printf ("config.txt setting error\n") ;
             return;
@@ -446,7 +446,7 @@ void loadFrameBuffer_diff_480320()
         for (i=0; i < ysize; i++) {
             for(j=0; j < xsize; j++) {
                 offset =  (i * xsize+ j)*2;
-                p=(buffer[offset+1] << 8) | buffer[offset];
+                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
                 
                 if (drawmap[1-flag][i][j] != p) {
                     drawmap[flag][i][j] = p;
