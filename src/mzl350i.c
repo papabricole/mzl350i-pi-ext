@@ -5,6 +5,11 @@
 #include <string.h>
 #include <sys/timeb.h>
 #include <stdint.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <linux/fb.h>
+#include <errno.h>
+#include <sys/ioctl.h>
 
 #define RGB565(r,g,b)((r >> 3) << 11 | (g >> 2) << 5 | ( b >> 3))
 #define BCM2708SPI
@@ -393,7 +398,6 @@ void loadFrameBuffer_diff_480320()
 {
     int  xsize=480, ysize=320;
     uint16_t *framebuffer;
-    FILE *infile=fopen("/dev/fb0","rb");
     int i,j;
     unsigned long offset=0;
     uint16_t p;
@@ -401,8 +405,37 @@ void loadFrameBuffer_diff_480320()
     int diffmap[ysize][xsize];
     int diffsx, diffsy, diffex, diffey;
     int numdiff=0;
-    
-    framebuffer = (uint16_t*) malloc(xsize * ysize * 2);
+    struct fb_var_screeninfo var_info;
+
+    int fbdev = open("/dev/fb0", O_RDONLY);
+    if (fbdev < 0) {
+        printf("Unable to open /dev/fb0.\n");
+        return;
+    }
+
+    // Retrieve the variable screen info.
+    if (ioctl(fbdev, FBIOGET_VSCREENINFO, &var_info) < 0) {
+        printf("Unable to retrieve variable screen info: %s\n", strerror(errno));
+        close(fbdev);
+        return;
+    }
+
+    printf("Bits per pixel:     %i\n", var_info.bits_per_pixel);
+    printf("Resolution:         %ix%i\n", var_info.xres, var_info.yres);
+
+    if (var_info.xres != xsize || var_info.yres != ysize) {
+        printf("Expected framebuffer resolution %ix%i got %ix%i", xsize, ysize, var_info.xres, var_info.yres);
+        printf("Edit /boot/config and change framebuffer_width to 480 and framebuffer_height to 320\n");
+        close(fbdev);
+        return;
+    }
+
+    framebuffer = mmap(NULL, xsize*ysize*2, PROT_READ,MAP_SHARED, fbdev, 0);
+    if (framebuffer == MAP_FAILED) {
+        printf("mmap failed.\n");
+        close(fbdev);
+        return;
+    }
 
     ili9481_Setwindow(0,480-1,0,320-1);
     LCD_clear(0);
@@ -415,13 +448,6 @@ void loadFrameBuffer_diff_480320()
     }
     
     while (1) {
-        rewind(infile);
-        if (fread (framebuffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
-            printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
-            printf ("config.txt setting error\n") ;
-            return;
-        }
-
         numdiff=0;
         diffex=diffey=0;
         diffsx=diffsy=65535;
