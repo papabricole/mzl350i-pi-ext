@@ -280,13 +280,7 @@ void loadFrameBuffer_diff_960640()
     int numdiff=0;
     
     buffer = (unsigned char *) malloc(xsize * ysize * 2);
-    rewind(infile);
-    
-    if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
-        printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
-        printf ("config.txt setting error\n") ;
-        return;
-    }
+
     ili9481_Setwindow(0,480-1,0,320-1);
     LCD_CS_CLR;
     LCD_RS_SET;
@@ -302,7 +296,14 @@ void loadFrameBuffer_diff_960640()
 
     flag=1;
     
-    while (1) {        
+    while (1) {
+        rewind(infile);
+        if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
+            printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
+            printf ("config.txt setting error\n") ;
+            return;
+        }
+
         numdiff=0;
         flag=1-flag;
         diffex=diffey=0;
@@ -394,11 +395,6 @@ void loadFrameBuffer_diff_960640()
                 }
             }
         }
-        
-        rewind(infile);
-        
-        if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1)
-            printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
     }
 }
 
@@ -418,13 +414,7 @@ void loadFrameBuffer_diff_480320()
     int numdiff=0;
     
     buffer = (unsigned char *) malloc(xsize * ysize * 2);
-    rewind(infile);
-    
-    if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
-        printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
-        printf ("config.txt setting error\n") ;
-        return;
-    }
+
     ili9481_Setwindow(0,480-1,0,320-1);
     LCD_CS_CLR;
     LCD_RS_SET;
@@ -441,7 +431,13 @@ void loadFrameBuffer_diff_480320()
     flag=1;
     
     while (1) {
-        
+        rewind(infile);
+        if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
+            printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
+            printf ("config.txt setting error\n") ;
+            return;
+        }
+
         numdiff=0;
         flag=1-flag;
         diffex=diffey=0;
@@ -496,11 +492,6 @@ void loadFrameBuffer_diff_480320()
                 }
             }
         }
-        
-        rewind(infile);
-        
-        if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1)
-            printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
     }
 }
 
