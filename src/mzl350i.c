@@ -32,7 +32,7 @@
 #define LCD_SCI_SET	bcm2835_gpio_set(SPISCI)
 #define LCD_PWM_SET	bcm2835_gpio_set(LCDPWM)
 
-void wr_comm(uint8_t out_data)
+void wr_cmd(uint8_t out_data)
 {
     LCD_CS_CLR;
     LCD_RS_CLR;
@@ -65,132 +65,132 @@ void LCD_Init()
     LCD_RST_SET;
     delay (100);
 
-    wr_comm(0x0011);
+    wr_cmd(0x11);      /* Exit Sleep Mode */
     delay(1);
-    wr_comm(0x0013);
+    wr_cmd(0x13);      /* Entering Nomal Displaymode */
     delay(1);
 
-    wr_comm(0x00C0);
-    wr_dat(0x0000);
-    wr_dat(0x003B);
-    wr_dat(0x0000);
-    wr_dat(0x0002);
-    wr_dat(0x0011);
+    wr_cmd(0xC0);      /* Panel Driving Settings */
+    wr_dat(0x00);
+    wr_dat(0x3B);
+    wr_dat(0x00);
+    wr_dat(0x02);
+    wr_dat(0x11);
 
-    wr_comm(0x00C1);
-    wr_dat(0x0010);
-    wr_dat(0x0010);//0B);
-    wr_dat(0x0068);//88);
+    wr_cmd(0xC1);      /* Display_Timing_Setting for Normal Mode */
+    wr_dat(0x10);
+    wr_dat(0x10);//0B);
+    wr_dat(0x68);//88);
 
-    wr_comm(0x00C5);
-    wr_dat(0x0001);
+    wr_cmd(0xC5);      /* Frame Rate and Inversion Control */
+    wr_dat(0x01);
 
-    wr_comm(0x00C8);
-    wr_dat(0x0000);
-    wr_dat(0x0030); //30
-    wr_dat(0x0036);
-    wr_dat(0x0045);
-    wr_dat(0x0004);
-    wr_dat(0x0016);
-    wr_dat(0x0037);
-    wr_dat(0x0075);
-    wr_dat(0x0077);
-    wr_dat(0x0054);
-    wr_dat(0x0006);//f);
-    wr_dat(0x0012);//00);
+    wr_cmd(0xC8);      /* Gamma Settings */
+    wr_dat(0x00);
+    wr_dat(0x30); //30
+    wr_dat(0x36);
+    wr_dat(0x45);
+    wr_dat(0x04);
+    wr_dat(0x16);
+    wr_dat(0x37);
+    wr_dat(0x75);
+    wr_dat(0x77);
+    wr_dat(0x54);
+    wr_dat(0x06);//f);
+    wr_dat(0x12);//00);
 
-    wr_comm(0x00D0);
-    wr_dat(0x0007);
-    wr_dat(0x0040);//40); //41
-    wr_dat(0x001f);//1c);//1e
+    wr_cmd(0xD0);      /* Power setting */
+    wr_dat(0x07);
+    wr_dat(0x40);//40);
+    wr_dat(0x1f);//1c);
 
     
-    wr_comm(0x00D1);
-    wr_dat(0x0000);
-    wr_dat(0x0018);//18);
-    wr_dat(0x0006);//1d);
+    wr_cmd(0xD1);      /* VCOM Control */
+    wr_dat(0x00);
+    wr_dat(0x18);//18);
+    wr_dat(0x06);//1d);
 
-    wr_comm(0x00D2);
-    wr_dat(0x0001);
-    wr_dat(0x0011);//11
+    wr_cmd(0xD2);      /* Power_Setting for Normal Mode */
+    wr_dat(0x01);
+    wr_dat(0x11);
 
-    wr_comm(0x00E4);
-    wr_dat(0x00A0);
+    wr_cmd(0xE4);      /* ??? */
+    wr_dat(0xA0);
 
-    wr_comm(0x00F0);
-    wr_dat(0x0001);
+    wr_cmd(0xF0);      /* ??? */
+    wr_dat(0x01);
 
-    wr_comm(0x00F3);
-    wr_dat(0x0040);
-    wr_dat(0x000A);
+    wr_cmd(0xF3);      /* ??? */
+    wr_dat(0x40);
+    wr_dat(0x0A);
 
-    wr_comm(0x00F7);
-    wr_dat(0x0080);
+    wr_cmd(0xF7);      /* ??? */
+    wr_dat(0x80);
 
-    wr_comm(0x0036);
-    wr_dat(0x0028);//02);
+    wr_cmd(0x36);      /* Set_address_mode */
+    wr_dat(0x28);//02); /* BGR-order,Holizontal-Flip */
 
-    wr_comm(0x003A);
-    wr_dat(0x0005);
+    wr_cmd(0x3A);      /* Set_pixel_format */
+    wr_dat(0x05);       /* RGB565(16dpp) */
 
-    wr_comm(0x00B3);
-    wr_dat(0x0000);
-    wr_dat(0x0000);
-    wr_dat(0x0000);
-    wr_dat(0x0011);
+    wr_cmd(0xB3);
+    wr_dat(0x00);
+    wr_dat(0x00);
+    wr_dat(0x00);
+    wr_dat(0x11);
 
-    wr_comm(0x002B);
-    wr_dat(0x0000);
-    wr_dat(0x0000);
-    wr_dat(0x0001);
-    wr_dat(0x003F);
+    wr_cmd(0x2B);
+    wr_dat(0x00);
+    wr_dat(0x00);
+    wr_dat(0x01);
+    wr_dat(0x3F);
 
-    wr_comm(0x002A);
-    wr_dat(0x0000);
-    wr_dat(0x0000);
-    wr_dat(0x0001);
-    wr_dat(0x00df);
+    wr_cmd(0x2A);
+    wr_dat(0x00);
+    wr_dat(0x00);
+    wr_dat(0x01);
+    wr_dat(0xdf);
 
     delay(1);
-    wr_comm(0x0029);
-    wr_comm(0x002C);
+    wr_cmd(0x29);      /* Display ON */
+    wr_cmd(0x2C);
 }
 
 void ili9481_SetCursor(uint32_t x, uint32_t y)
 {
-    wr_comm(0x002B);
+    wr_cmd(0x2B);
     wr_dat(x>>8);
-    wr_dat(0x00FF&x);
-    wr_dat(0x0001);
-    wr_dat(0x003F);
+    wr_dat(0xFF&x);
+    wr_dat(0x01);
+    wr_dat(0x3F);
 
-    wr_comm(0x002A);
+    wr_cmd(0x2A);
     wr_dat(y>>8);
-    wr_dat(0x00FF&y);
-    wr_dat(0x0001);
-    wr_dat(0x00df);
+    wr_dat(0xFF&y);
+    wr_dat(0x01);
+    wr_dat(0xdf);
 }
 
 void ili9481_Setwindow(uint32_t xs, uint32_t xe, uint32_t ys, uint32_t ye)
 {
-    wr_comm(0x002a);
+    wr_cmd(0x2a);
     wr_dat(xs>>8);
     wr_dat(xs);
     wr_dat(xe>>8);
     wr_dat(xe);
 
-    wr_comm(0x002b);
+    wr_cmd(0x2b);
     wr_dat(ys>>8);
     wr_dat(ys);
     wr_dat(ye>>8);
     wr_dat(ye);
-    wr_comm(0x002C);
+    wr_cmd(0x2C);
 }
 
 void TFTSetXY(uint32_t x, uint32_t y)
 {
     ili9481_SetCursor(x,y);
-    wr_comm(0x002C);
+    wr_cmd(0x2C);
 }
 
 void LCD_test()
@@ -240,18 +240,18 @@ void LCD_clear(uint16_t p)
 
 void write_dot(uint16_t dx, uint16_t dy, uint16_t color)
 {
-    wr_comm(0x002A);
+    wr_cmd(0x2A);
     wr_dat(dy>>8);
     wr_dat(dy);
     //wr_dat(0x01);
     //wr_dat(0xdF);
 
-    wr_comm(0x002B);
+    wr_cmd(0x2B);
     wr_dat(dx>>8);
     wr_dat(dx);
     //wr_dat(0x01);
     //wr_dat(0x3F);
-    wr_comm(0x002C);
+    wr_cmd(0x2C);
     LCD_CS_CLR;
     LCD_RS_SET;
     LCD_WR_Data(color);
