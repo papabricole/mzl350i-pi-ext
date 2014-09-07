@@ -280,14 +280,12 @@ void loadFrameBuffer_diff_960640()
     framebuffer = (unsigned char *) malloc(xsize * ysize * 2);
 
     ili9481_Setwindow(0,480-1,0,320-1);
-    LCD_CS_CLR;
-    LCD_RS_SET;
+    LCD_clear(0);
     
     for (i=0; i < ysize/2; i++) {
         for (j=0; j< xsize/2; j++) {
             diffmap[i][j]=1;
             drawmap[0][i][j]=0;
-            LCD_WR_Data(0);
             drawmap[1][i][j]=255;
         }
     }
@@ -414,14 +412,12 @@ void loadFrameBuffer_diff_480320()
     framebuffer = (uint16_t*) malloc(xsize * ysize * 2);
 
     ili9481_Setwindow(0,480-1,0,320-1);
-    LCD_CS_CLR;
-    LCD_RS_SET;
+    LCD_clear(0);
 
     for (i=0; i < ysize; i++) {
         for (j=0; j< xsize; j++) {
             diffmap[i][j]=1;
             drawmap[0][i][j]=0;
-            LCD_WR_Data(0);
             drawmap[1][i][j]=255;
         }
     }
