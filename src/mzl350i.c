@@ -55,7 +55,7 @@ void wr_dat(uint8_t out_data)
     LCD_CS_SET;
 }
 
-void LCD_WR_Data(uint32_t val)
+void LCD_WR_Data(uint16_t val)
 {
     bcm2835_spi_transfer(val>>8);
     bcm2835_spi_transfer(val);
@@ -198,9 +198,9 @@ void TFTSetXY(uint32_t x, uint32_t y)
 
 void LCD_test()
 {
-    uint32_t temp,num,i;
+    uint32_t num,i;
     char n;
-    const short color[]={0xf800,0x07e0,0x001f,0xffe0,0x0000,0xffff,0x07ff,0xf81f};
+    const uint16_t color[]={0xf800,0x07e0,0x001f,0xffe0,0x0000,0xffff,0x07ff,0xf81f};
 
     ili9481_Setwindow(0,480-1,0,320-1);
 
@@ -208,9 +208,8 @@ void LCD_test()
     LCD_RS_SET;
 
     for (n=0;n<8;n++) {
-        temp=color[n];
         for (num=40*480;num>0;num--) {
-            LCD_WR_Data(temp);
+            LCD_WR_Data(color[n]);
         }
     }
     for (n=0;n<3;n++) {
@@ -218,17 +217,16 @@ void LCD_test()
         LCD_CS_CLR;
         LCD_RS_SET;
 
-        temp=color[n];
         for (i=0;i<320;i++) {
             for (num=0;num<480;num++) {
-                LCD_WR_Data(temp);
+                LCD_WR_Data(color[n]);
             }
         }
     }
     LCD_CS_SET;
 }
 
-void LCD_clear(uint32_t p)
+void LCD_clear(uint16_t p)
 {
     uint32_t i,j;
     TFTSetXY(0,0);
@@ -402,18 +400,18 @@ void loadFrameBuffer_diff_960640()
 void loadFrameBuffer_diff_480320()
 {
     int  xsize=480, ysize=320;
-    unsigned char *framebuffer;
+    uint16_t *framebuffer;
     FILE *infile=fopen("/dev/fb0","rb");
     int i,j;
     unsigned long offset=0;
-    int p;
+    uint16_t p;
     int flag;
-    int drawmap[2][ysize][xsize];
+    uint16_t drawmap[2][ysize][xsize];
     int diffmap[ysize][xsize];
     int diffsx, diffsy, diffex, diffey;
     int numdiff=0;
     
-    framebuffer = (unsigned char *) malloc(xsize * ysize * 2);
+    framebuffer = (uint16_t*) malloc(xsize * ysize * 2);
 
     ili9481_Setwindow(0,480-1,0,320-1);
     LCD_CS_CLR;
@@ -445,8 +443,8 @@ void loadFrameBuffer_diff_480320()
         
         for (i=0; i < ysize; i++) {
             for(j=0; j < xsize; j++) {
-                offset =  (i * xsize+ j)*2;
-                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
+                offset =  (i * xsize+ j);
+                p=framebuffer[offset];
                 
                 if (drawmap[1-flag][i][j] != p) {
                     drawmap[flag][i][j] = p;
