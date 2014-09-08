@@ -11,14 +11,6 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 
-#define RGB565(r,g,b)((r >> 3) << 11 | (g >> 2) << 5 | ( b >> 3))
-#define BCM2708SPI
-#define ROTATE90
-
-#define RGB565_MASK_RED        0xF800
-#define RGB565_MASK_GREEN    0x07E0
-#define RGB565_MASK_BLUE       0x001F
-
 #define	SPICS	RPI_GPIO_P1_24	//GPIO08
 #define	SPIRS	RPI_GPIO_P1_22	//GPIO25
 #define	SPIRST	RPI_GPIO_P1_10	//GPIO15
@@ -266,134 +258,6 @@ void write_dot(uint16_t dx, uint16_t dy, uint16_t color)
     LCD_CS_SET;
 }
 
-void loadFrameBuffer_diff_960640()
-{
-    int  xsize=960, ysize=640;
-    unsigned char *framebuffer;
-    FILE *infile=fopen("/dev/fb0","rb");
-    int i,j;
-    unsigned long offset=0;
-    int p;
-    int r1,g1,b1;
-    int r,g,b;
-    int drawmap[ysize/2][xsize/2];
-    int diffmap[ysize/2][xsize/2];
-    int diffsx, diffsy, diffex, diffey;
-    int numdiff=0;
-    
-    framebuffer = (unsigned char *) malloc(xsize * ysize * 2);
-
-    ili9481_Setwindow(0,480-1,0,320-1);
-    LCD_clear(0);
-    
-    for (i=0; i < ysize/2; i++) {
-        for (j=0; j< xsize/2; j++) {
-            diffmap[i][j]=1;
-            drawmap[i][j]=0;
-        }
-    }
-    
-    while (1) {
-        rewind(infile);
-        if (fread (framebuffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
-            printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
-            printf ("config.txt setting error\n") ;
-            return;
-        }
-
-        numdiff=0;
-        diffex=diffey=0;
-        diffsx=diffsy=65535;
-
-        for (i=0; i < ysize; i+=2) {
-            for (j=0; j < xsize; j+=2) {
-                offset =  (i * xsize+ j)*2;
-                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
-                r = (p & RGB565_MASK_RED) >> 11;
-                g = (p & RGB565_MASK_GREEN) >> 5;
-                b = (p & RGB565_MASK_BLUE);
-                
-                r <<= 1;
-                b <<= 1;
-                
-                offset = ( (i+1) * xsize +j )*2;
-                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
-                r1 = (p & RGB565_MASK_RED) >> 11;
-                g1 = (p & RGB565_MASK_GREEN) >> 5;
-                b1 = (p & RGB565_MASK_BLUE);
-                
-                r += r1<<1;
-                g += g1;
-                b += b1 <<1;
-                
-                offset = ( i*xsize + j+1)*2;
-                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
-                r1 = (p & RGB565_MASK_RED) >> 11;
-                g1 = (p & RGB565_MASK_GREEN) >> 5;
-                b1 = (p & RGB565_MASK_BLUE);
-                
-                r += r1<<1;
-                g += g1;
-                b += b1 <<1;
-                
-                offset=((i+1)*xsize + j+1)*2;
-                p=(framebuffer[offset+1] << 8) | framebuffer[offset];
-                r1 = (p & RGB565_MASK_RED) >> 11;
-                g1 = (p & RGB565_MASK_GREEN) >> 5;
-                b1 = (p & RGB565_MASK_BLUE);
-                
-                r += r1<<1;
-                g += g1;
-                b += b1 <<1;
-                
-                p=RGB565(r, g, b);
-                
-                if (drawmap[i>>1][j>>1] != p) {
-                    drawmap[i>>1][j>>1] = p;
-                    diffmap[i>>1][j>>1]=1;
-                    numdiff++;
-                    if ((i>>1) < diffsx)
-                        diffsx = i>>1;
-                    if ((i>>1) > diffex)
-                        diffex = i >> 1;
-                    if ((j>>1)< diffsy)
-                        diffsy=j>>1;
-                    if ((j>>1)>diffey)
-                        diffey = j >>1;
-                    
-                } else {
-                    diffmap[i>>1][j>>1]=0;
-                }
-            }
-            
-        }
-
-        if (numdiff< 2) {
-            ili9481_Setwindow(0,480-1,0,320-1);
-            LCD_CS_CLR;
-            LCD_RS_SET;
-            for (i=diffsx; i<=diffex; i++) {
-                for (j=diffsy;j<=diffey; j++) {
-                    if (diffmap[i][j]!=0)
-                        write_dot(i,j,drawmap[i][j]);
-                }
-            }
-            usleep(700L);
-            
-        } else {
-            ili9481_Setwindow(diffsy,diffey,diffsx,diffex);
-            LCD_CS_CLR;
-            LCD_RS_SET;
-            for (i=diffsx; i<=diffex; i++) {
-                for (j=diffsy;j<=diffey; j++) {
-                    LCD_WR_Data(drawmap[i][j]);
-                }
-            }
-        }
-    }
-}
-
-
 void loadFrameBuffer_diff_480320()
 {
     int  xsize=480, ysize=320;
@@ -437,7 +301,7 @@ void loadFrameBuffer_diff_480320()
         return;
     }
 
-    ili9481_Setwindow(0,480-1,0,320-1);
+    ili9481_Setwindow(0, xsize-1, 0, ysize-1);
     LCD_clear(0);
 
     for (i=0; i < ysize; i++) {
@@ -478,7 +342,7 @@ void loadFrameBuffer_diff_480320()
         }
 
         if (numdiff< 2) {
-            ili9481_Setwindow(0,480-1,0,320-1);
+            ili9481_Setwindow(0, xsize-1, 0, ysize-1);
             LCD_CS_CLR;
             LCD_RS_SET;
             for (i=diffsx; i<=diffex; i++) {
@@ -490,7 +354,7 @@ void loadFrameBuffer_diff_480320()
             usleep(700L);
             
         } else {
-            ili9481_Setwindow(diffsy,diffey,diffsx,diffex);
+            ili9481_Setwindow(diffsy, diffey, diffsx, diffex);
             LCD_CS_CLR;
             LCD_RS_SET;
             
@@ -526,6 +390,6 @@ int main (void)
     LCD_Init();
     //LCD_test();
     loadFrameBuffer_diff_480320();
-    //loadFrameBuffer_diff_960640();
+
     return 0 ;
 }
