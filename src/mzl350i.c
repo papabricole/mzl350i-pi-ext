@@ -260,7 +260,9 @@ void write_dot(uint16_t dx, uint16_t dy, uint16_t color)
 
 void loadFrameBuffer_diff_480320()
 {
-    int  xsize=480, ysize=320;
+    const int xsize=480;
+    const int ysize=320;
+
     uint16_t *framebuffer;
     int i,j;
     unsigned long offset=0;
@@ -269,12 +271,20 @@ void loadFrameBuffer_diff_480320()
     int diffmap[ysize][xsize];
     int diffsx, diffsy, diffex, diffey;
     int numdiff=0;
+    struct fb_fix_screeninfo fix_info;
     struct fb_var_screeninfo var_info;
 
     int fbdev = open("/dev/fb0", O_RDONLY);
     if (fbdev < 0) {
         printf("Unable to open /dev/fb0.\n");
         return;
+    }
+
+    // Retrieve fixed screen info.
+    if (ioctl(fbdev, FBIOGET_FSCREENINFO, &fix_info) < 0) {
+    	printf("Unable to retrieve fixed screen info: %s\n", strerror(errno));
+    	close(fbdev);
+    	return;
     }
 
     // Retrieve the variable screen info.
@@ -288,13 +298,11 @@ void loadFrameBuffer_diff_480320()
     printf("Resolution:         %ix%i\n", var_info.xres, var_info.yres);
 
     if (var_info.xres != xsize || var_info.yres != ysize) {
-        printf("Expected framebuffer resolution %ix%i got %ix%i", xsize, ysize, var_info.xres, var_info.yres);
-        printf("Edit /boot/config and change framebuffer_width to 480 and framebuffer_height to 320\n");
-        close(fbdev);
-        return;
+        printf("WARNING: Expected framebuffer resolution %ix%i got %ix%i\n", xsize, ysize, var_info.xres, var_info.yres);
+        printf("Edit /boot/config.txt and change framebuffer_width to 480 and framebuffer_height to 320\n");
     }
 
-    framebuffer = mmap(NULL, xsize*ysize*2, PROT_READ,MAP_SHARED, fbdev, 0);
+    framebuffer = mmap(NULL, fix_info.smem_len, PROT_READ,MAP_SHARED, fbdev, 0);
     if (framebuffer == MAP_FAILED) {
         printf("mmap failed.\n");
         close(fbdev);
@@ -318,7 +326,7 @@ void loadFrameBuffer_diff_480320()
         
         for (i=0; i < ysize; i++) {
             for(j=0; j < xsize; j++) {
-                offset =  (i * xsize+ j);
+                offset =  i * var_info.xres + j;
                 p=framebuffer[offset];
                 
                 if (drawmap[i][j] != p) {
