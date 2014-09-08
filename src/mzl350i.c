@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/timeb.h>
+#include <stdint.h>
 
 #define RGB565(r,g,b)((r >> 3) << 11 | (g >> 2) << 5 | ( b >> 3))
 #define BCM2708SPI
@@ -34,13 +35,7 @@
 #define LCD_SCI_SET	bcm2835_gpio_set(SPISCI)
 #define LCD_PWM_SET	bcm2835_gpio_set(LCDPWM)
 
-#define uchar	unsigned char
-#define uint unsigned int 
-short color[]={0xf800,0x07e0,0x001f,0xffe0,0x0000,0xffff,0x07ff,0xf81f};
-char *value=NULL;
-int hsize=0, vsize=0;
-
-void wr_comm(uchar out_data)              
+void wr_comm(uint8_t out_data)
 {
     LCD_CS_CLR;
     LCD_RS_CLR;
@@ -50,7 +45,7 @@ void wr_comm(uchar out_data)
     LCD_CS_SET;
 }
 
-void wr_dat(uchar out_data)              
+void wr_dat(uint8_t out_data)
 {
     LCD_CS_CLR;
     LCD_RS_SET;
@@ -60,17 +55,10 @@ void wr_dat(uchar out_data)
     LCD_CS_SET;
 }
 
-void LCD_WR_Data(uint val)
+void LCD_WR_Data(uint32_t val)
 {
     bcm2835_spi_transfer(val>>8);
     bcm2835_spi_transfer(val);
-}
-
-uint LCD_RD_REG16(uint index)
-{
-    uint pd;
-
-    return pd;;
 }
 
 void LCD_Init()
@@ -171,7 +159,7 @@ void LCD_Init()
     wr_comm(0x002C);
 }
 
-void ili9481_SetCursor(uint x,uint y)
+void ili9481_SetCursor(uint32_t x, uint32_t y)
 {
     wr_comm(0x002B);
     wr_dat(x>>8);
@@ -186,7 +174,7 @@ void ili9481_SetCursor(uint x,uint y)
     wr_dat(0x00df);
 }
 
-void ili9481_Setwindow(uint xs,uint xe,uint ys,uint ye)
+void ili9481_Setwindow(uint32_t xs, uint32_t xe, uint32_t ys, uint32_t ye)
 {
     wr_comm(0x002a);
     wr_dat(xs>>8);
@@ -202,7 +190,7 @@ void ili9481_Setwindow(uint xs,uint xe,uint ys,uint ye)
     wr_comm(0x002C);
 }
 
-void TFTSetXY(uint x,uint y)
+void TFTSetXY(uint32_t x, uint32_t y)
 {
     ili9481_SetCursor(x,y);
     wr_comm(0x002C);
@@ -210,8 +198,9 @@ void TFTSetXY(uint x,uint y)
 
 void LCD_test()
 {
-    uint temp,num,i;
+    uint32_t temp,num,i;
     char n;
+    const short color[]={0xf800,0x07e0,0x001f,0xffe0,0x0000,0xffff,0x07ff,0xf81f};
 
     ili9481_Setwindow(0,480-1,0,320-1);
 
@@ -239,9 +228,9 @@ void LCD_test()
     LCD_CS_SET;
 }
 
-void LCD_clear(uint p)
+void LCD_clear(uint32_t p)
 {
-    uint i,j;
+    uint32_t i,j;
     TFTSetXY(0,0);
     LCD_CS_CLR;
     LCD_RS_SET;
@@ -254,7 +243,7 @@ void LCD_clear(uint p)
     LCD_CS_SET;
 }
 
-void write_dot(char dx,int dy,int color)
+void write_dot(uint16_t dx, uint16_t dy, uint16_t color)
 {
     wr_comm(0x002A);
     wr_dat(dy>>8);
@@ -279,27 +268,22 @@ void loadFrameBuffer_diff_960640()
     int  xsize=960, ysize=640;
     unsigned char *buffer;
     FILE *infile=fopen("/dev/fb0","rb");
-    long fp;
-    int i,j,k,time=300;
+    int i,j;
     unsigned long offset=0;
     int p;
     int r1,g1,b1;
     int r,g,b;
-    long minsum=0;
-    long nowsum=0;
     int flag;
-    int ra,ga,ba;
     int drawmap[2][ysize/2][xsize/2];
     int diffmap[ysize/2][xsize/2];
     int diffsx, diffsy, diffex, diffey;
     int numdiff=0;
-    int area;
     
     buffer = (unsigned char *) malloc(xsize * ysize * 2);
-    fseek(infile, 0, 0);
+    rewind(infile);
     
     if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
-        printf ("Read < %d chars when loading file %s\n", hsize*vsize*3, "ss");
+        printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
         printf ("config.txt setting error\n") ;
         return;
     }
@@ -318,9 +302,7 @@ void loadFrameBuffer_diff_960640()
 
     flag=1;
     
-    while (1) {
-        //while (time--) {
-        
+    while (1) {        
         numdiff=0;
         flag=1-flag;
         diffex=diffey=0;
@@ -369,7 +351,6 @@ void loadFrameBuffer_diff_960640()
                 
                 p=RGB565(r, g, b);
                 
-                //drawmap[flag][i>>1][j>>1] = p;
                 if (drawmap[1-flag][i>>1][j>>1] != p) {
                     drawmap[flag][i>>1][j>>1] = p;
                     diffmap[i>>1][j>>1]=1;
@@ -390,12 +371,7 @@ void loadFrameBuffer_diff_960640()
             }
             
         }
-        if (numdiff > 10) {
-            // printf ("(%d, %d) - (%d, %d)\n",diffsx, diffsy, diffex, diffey);
-            
-            //area = ((abs(diffex - diffsx)+1)*(1+abs(diffey-diffsy)));
-            //printf("diff:%d, area:%d, cov:%f\n",numdiff, area,(1.0*numdiff)/area);
-        }
+
         if (numdiff< 2) {
             ili9481_Setwindow(0,480-1,0,320-1);
             LCD_CS_CLR;
@@ -412,7 +388,6 @@ void loadFrameBuffer_diff_960640()
             ili9481_Setwindow(diffsy,diffey,diffsx,diffex);
             LCD_CS_CLR;
             LCD_RS_SET;
-            //printf ("(%d, %d) - (%d, %d)\n",diffsx, diffsy, diffex, diffey);
             for (i=diffsx; i<=diffex; i++) {
                 for (j=diffsy;j<=diffey; j++) {
                     LCD_WR_Data(drawmap[flag][i][j]);
@@ -420,10 +395,10 @@ void loadFrameBuffer_diff_960640()
             }
         }
         
-        fseek(infile, 0, 0);
+        rewind(infile);
         
         if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1)
-            printf ("Read < %d chars when loading file %s\n", hsize*vsize*3, "ss");
+            printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
     }
 }
 
@@ -433,27 +408,20 @@ void loadFrameBuffer_diff_480320()
     int  xsize=480, ysize=320;
     unsigned char *buffer;
     FILE *infile=fopen("/dev/fb0","rb");
-    long fp;
-    int i,j,k;
+    int i,j;
     unsigned long offset=0;
     int p;
-    int r1,g1,b1;
-    int r,g,b;
-    long minsum=0;
-    long nowsum=0;
     int flag;
-    int ra,ga,ba;
     int drawmap[2][ysize][xsize];
     int diffmap[ysize][xsize];
     int diffsx, diffsy, diffex, diffey;
     int numdiff=0;
-    int area;
     
     buffer = (unsigned char *) malloc(xsize * ysize * 2);
-    fseek(infile, 0, 0);
+    rewind(infile);
     
     if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1) {
-        printf ("Read < %d chars when loading file %s\n", hsize*vsize*3, "ss");
+        printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
         printf ("config.txt setting error\n") ;
         return;
     }
@@ -484,7 +452,6 @@ void loadFrameBuffer_diff_480320()
                 offset =  (i * xsize+ j)*2;
                 p=(buffer[offset+1] << 8) | buffer[offset];
                 
-                //drawmap[flag][i>>1][j>>1] = p;
                 if (drawmap[1-flag][i][j] != p) {
                     drawmap[flag][i][j] = p;
                     diffmap[i][j]=1;
@@ -502,16 +469,10 @@ void loadFrameBuffer_diff_480320()
                 } else {
                     diffmap[i][j]=0;
                 }
-                // offset++;
             }
             
         }
-        if (numdiff > 400) {
-            // printf ("(%d, %d) - (%d, %d)\n",diffsx, diffsy, diffex, diffey);
-            
-            //area = ((abs(diffex - diffsx)+1)*(1+abs(diffey-diffsy)));
-            //printf("diff:%d, area:%d, cov:%f\n",numdiff, area,(1.0*numdiff)/area);
-        }
+
         if (numdiff< 2) {
             ili9481_Setwindow(0,480-1,0,320-1);
             LCD_CS_CLR;
@@ -529,7 +490,6 @@ void loadFrameBuffer_diff_480320()
             LCD_CS_CLR;
             LCD_RS_SET;
             
-            //printf ("(%d, %d) - (%d, %d)\n",diffsx, diffsy, diffex, diffey);
             for (i=diffsx; i<=diffex; i++) {
                 for (j=diffsy;j<=diffey; j++) {
                     LCD_WR_Data(drawmap[flag][i][j]);
@@ -537,10 +497,10 @@ void loadFrameBuffer_diff_480320()
             }
         }
         
-        fseek(infile, 0, 0);
+        rewind(infile);
         
         if (fread (buffer, xsize * ysize *2, sizeof(unsigned char), infile) != 1)
-            printf ("Read < %d chars when loading file %s\n", hsize*vsize*3, "ss");
+            printf ("Read < %d chars when loading file %s\n", xsize*ysize*2, "/dev/fb0");
     }
 }
 
@@ -560,13 +520,9 @@ int main (void)
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE3);
     bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_2);
-    
-    //bcm2835_spi_chipSelect(BCM2835_SPI_CS1);
-    //bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS1,LOW);
 
     LCD_PWM_CLR;
-    printf ("Raspberry Pi MZL350I LCD Testing...\n") ;
-    printf ("http://jwlcd-tp.taobao.com\n") ;
+    printf ("Raspberry Pi MZL350I LCD...\n") ;
     
     LCD_Init();
     //LCD_test();
