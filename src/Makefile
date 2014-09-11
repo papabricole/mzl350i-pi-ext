@@ -2,8 +2,11 @@ CC=gcc -Wall -O3
 
 all: mzl350i
 
-mzl350i: mzl350i.c bcm2835.o
-	$(CC) -o mzl350i -l rt mzl350i.c bcm2835.o
+mzl350i: mzl350i.c ili9481.o bcm2835.o
+	$(CC) -o mzl350i -l rt mzl350i.c ili9481.o bcm2835.o
+
+ili9481.o: ili9481.c ili9481.h
+	$(CC) -c ili9481.c -o ili9481.o
 
 bcm2835.o: bcm2835.c bcm2835.h
 	$(CC) -c bcm2835.c -o bcm2835.o
