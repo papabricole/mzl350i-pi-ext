@@ -34,12 +34,10 @@
 
 void wr_cmd(uint8_t out_data)
 {
-    LCD_CS_CLR;
+    LCD_CS_SET;
     LCD_RS_CLR;
 
     bcm2835_spi_transfer(out_data);
-
-    LCD_CS_SET;
 }
 
 void wr_dat(uint8_t out_data)
@@ -48,8 +46,6 @@ void wr_dat(uint8_t out_data)
     LCD_RS_SET;
 
     bcm2835_spi_transfer(out_data);
-
-    LCD_CS_SET;
 }
 
 void LCD_WR_Data(uint16_t val)
@@ -238,25 +234,31 @@ void LCD_clear(uint16_t p)
     LCD_CS_SET;
 }
 
-void write_dot(uint16_t dx, uint16_t dy, uint16_t color)
+void write_dot(int dx,int dy, uint16_t color)
 {
-    wr_cmd(0x2A);
-    wr_dat(dy>>8);
-    wr_dat(dy);
-    //wr_dat(0x01);
-    //wr_dat(0xdF);
+    LCD_CS_SET; LCD_RS_CLR;
+    bcm2835_spi_transfer(0x2A);
+    LCD_RS_SET; LCD_CS_CLR;
+    bcm2835_spi_transfer(dx>>8);
+    bcm2835_spi_transfer(dx);
+    bcm2835_spi_transfer(0x01);
+    bcm2835_spi_transfer(0xdF);
 
-    wr_cmd(0x2B);
-    wr_dat(dx>>8);
-    wr_dat(dx);
-    //wr_dat(0x01);
-    //wr_dat(0x3F);
-    wr_cmd(0x2C);
-    LCD_CS_CLR;
-    LCD_RS_SET;
-    LCD_WR_Data(color);
-    LCD_CS_SET;
+    LCD_CS_SET; LCD_RS_CLR;
+    bcm2835_spi_transfer(0x2B);
+    LCD_RS_SET; LCD_CS_CLR;
+    bcm2835_spi_transfer(dy>>8);
+    bcm2835_spi_transfer(dy);
+    bcm2835_spi_transfer(0x01);
+    bcm2835_spi_transfer(0x3F);
+
+    LCD_CS_SET; LCD_RS_CLR;
+    bcm2835_spi_transfer(0x2C);
+    LCD_RS_SET; LCD_CS_CLR;
+    bcm2835_spi_transfer(color>>8);
+    bcm2835_spi_transfer(color);
 }
+
 
 void loadFrameBuffer_diff_480320()
 {
@@ -350,9 +352,6 @@ void loadFrameBuffer_diff_480320()
         }
 
         if (numdiff< 2) {
-            ili9481_Setwindow(0, xsize-1, 0, ysize-1);
-            LCD_CS_CLR;
-            LCD_RS_SET;
             for (i=diffsx; i<=diffex; i++) {
                 for (j=diffsy;j<=diffey; j++) {
                     if (diffmap[i][j]!=0)
