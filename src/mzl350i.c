@@ -42,11 +42,11 @@ void loadFrameBuffer_diff_480320()
     const int ysize=320;
 
     uint16_t *framebuffer;
-    int i,j;
+    int x,y;
     unsigned long offset=0;
     uint16_t p;
-    uint16_t drawmap[ysize][xsize];
-    int diffmap[ysize][xsize];
+    uint16_t drawmap[xsize][ysize];
+    char     diffmap[xsize][ysize];
     int diffsx, diffsy, diffex, diffey;
     int numdiff=0;
     struct fb_fix_screeninfo fix_info;
@@ -90,48 +90,44 @@ void loadFrameBuffer_diff_480320()
     ili9481_setwindow(0, xsize-1, 0, ysize-1);
     ili9481_clear(0);
 
-    for (i=0; i < ysize; i++) {
-        for (j=0; j< xsize; j++) {
-            diffmap[i][j]=1;
-            drawmap[i][j]=0;
-        }
-    }
-    
+    memset(diffmap, 0, xsize*ysize*sizeof(char));
+    memset(drawmap, 0, xsize*ysize*sizeof(uint16_t));
+
     while (1) {
         numdiff=0;
         diffex=diffey=0;
         diffsx=diffsy=65535;
         
-        for (i=0; i < ysize; i++) {
-            for(j=0; j < xsize; j++) {
-                offset =  i * var_info.xres + j;
+        for (y=0; y<ysize; y++) {
+            for(x=0; x<xsize; x++) {
+                offset =  x + y * var_info.xres;
                 p=framebuffer[offset];
                 
-                if (drawmap[i][j] != p) {
-                    drawmap[i][j] = p;
-                    diffmap[i][j]=1;
+                if (drawmap[x][y] != p) {
+                    drawmap[x][y] = p;
+                    diffmap[x][y]=1;
                     numdiff++;
-                    if ((i) < diffsx)
-                        diffsx = i;
-                    if ((i) > diffex)
-                        diffex = i ;
-                    if ((j)< diffsy)
-                        diffsy=j;
-                    if ((j)>diffey)
-                        diffey = j ;
+                    if (x < diffsx)
+                        diffsx = x;
+                    if (x > diffex)
+                        diffex = x;
+                    if (y < diffsy)
+                        diffsy=y;
+                    if (y > diffey)
+                        diffey = y;
                     
                 } else {
-                    diffmap[i][j]=0;
+                    diffmap[x][y]=0;
                 }
             }
             
         }
 
         if (numdiff< 2) {
-            for (i=diffsx; i<=diffex; i++) {
-                for (j=diffsy;j<=diffey; j++) {
-                    if (diffmap[i][j]!=0)
-                        ili9481_pset(i,j,drawmap[i][j]);
+            for (y=diffsy; y<=diffey; y++) {
+                for (x=diffsx; x<=diffex; x++) {
+                    if (diffmap[x][y]!=0)
+                        ili9481_pset(x, y, drawmap[x][y]);
                 }
             }
             usleep(700L);
@@ -139,11 +135,7 @@ void loadFrameBuffer_diff_480320()
         } else {
             ili9481_setwindow(diffsy, diffey, diffsx, diffex);
             
-            for (i=diffsx; i<=diffex; i++) {
-                for (j=diffsy;j<=diffey; j++) {
-                    ili9481_writedata(drawmap[i][j]);
-                }
-            }
+            ili9481_writedatan((diffey-diffsy)*(diffex-diffsx), &drawmap[diffsx][diffsy]);
         }
     }
 }

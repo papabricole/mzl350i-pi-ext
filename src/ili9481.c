@@ -49,6 +49,20 @@ void ili9481_writedata(uint16_t val)
     bcm2835_spi_transfer(val);
 }
 
+void ili9481_writedatan(uint32_t len, const uint16_t* data)
+{
+    uint32_t i;
+    LCD_CS_CLR;
+    LCD_RS_SET;
+
+    uint16_t* ptr = data;
+    for (i=0; i<len; i++) {
+        bcm2835_spi_transfer(*ptr>>8);
+        bcm2835_spi_transfer(*ptr);
+        ptr++;
+    }
+}
+
 int ili9481_init()
 {
     if (!bcm2835_init()) {
